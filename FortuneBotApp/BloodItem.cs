@@ -4,7 +4,7 @@
     internal sealed class BloodItem
     {
         /// <summary> The empty </summary>
-        public static BloodItem Empty = new BloodItem(BloodType.Invalid, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        public static BloodItem Empty => new BloodItem(BloodType.Invalid, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
         /// <summary> Initializes a new instance of the <see cref="BloodItem" /> class. </summary>
         /// <param name="type"> The type. </param>
