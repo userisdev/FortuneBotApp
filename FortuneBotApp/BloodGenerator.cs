@@ -4,8 +4,11 @@ using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -57,7 +60,8 @@ namespace FortuneBotApp
                 DateTime now = DateTime.Today;
                 lastUpdated = now;
 
-                string htmlText = await GetRequestAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
+                byte[] data = await GetRequestAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
+                string htmlText = ConvertHtml(data);
 
                 if (lastUpdated < DateTime.Today)
                 {
@@ -111,6 +115,32 @@ namespace FortuneBotApp
             {
                 Updating = false;
             }
+        }
+
+        /// <summary> Converts the HTML. </summary>
+        /// <param name="data"> The data. </param>
+        /// <returns> </returns>
+        private static string ConvertHtml(byte[] data)
+        {
+            try
+            {
+                if (data[0] == 0x1f && data[1] == 0x8b)
+                {
+                    using (MemoryStream compressedStream = new MemoryStream(data))
+                    using (GZipStream decompressionStream = new GZipStream(compressedStream, CompressionMode.Decompress))
+                    using (MemoryStream decompressedStream = new MemoryStream())
+                    {
+                        decompressionStream.CopyTo(decompressedStream);
+                        return Encoding.UTF8.GetString(decompressedStream.ToArray());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Exception/{ex}");
+            }
+
+            return Encoding.UTF8.GetString(data);
         }
 
         /// <summary> Extracts the blood type links. </summary>
@@ -202,7 +232,10 @@ namespace FortuneBotApp
         private static async Task<BloodItem> GetBloodItemAsync(BloodType type, string path)
         {
             string url = $"https://uranai.d-square.co.jp/{path}";
-            string htmlText = await GetRequestAsync(url);
+            byte[] data = await GetRequestAsync(url);
+            string htmlText = ConvertHtml(data);
+
+            File.WriteAllBytes($"{type}.dmp", data);
 
             HtmlParser parser = new HtmlParser();
             IHtmlDocument document = parser.ParseDocument(htmlText);
@@ -219,7 +252,7 @@ namespace FortuneBotApp
         /// <param name="url"> The URL. </param>
         /// <returns> </returns>
         /// <exception cref="System.Net.Http.HttpRequestException"> Failed to fetch {endpoint} </exception>
-        private static async Task<string> GetRequestAsync(string url)
+        private static async Task<byte[]> GetRequestAsync(string url)
         {
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
 
@@ -227,7 +260,7 @@ namespace FortuneBotApp
             HttpResponseMessage response = await httpClient.GetAsync(url);
 
             return response.IsSuccessStatusCode
-                ? await response.Content.ReadAsStringAsync()
+                ? await response.Content.ReadAsByteArrayAsync()
                 : throw new HttpRequestException($"Failed to fetch {url}");
         }
     }
