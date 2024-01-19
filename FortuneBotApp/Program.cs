@@ -31,6 +31,19 @@ namespace FortuneBotApp
             Trace.AutoFlush = true;
 
             FortuneBot bot = new FortuneBot(token);
+
+            // NOTE:初回更新
+            await bot.UpdateAsync();
+
+            _ = Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await bot.UpdateAsync();
+                }
+            });
+
             await bot.RunAsync();
             Environment.Exit(0);
         }

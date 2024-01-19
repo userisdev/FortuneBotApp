@@ -31,6 +31,10 @@
         /// <value> The color. </value>
         public string Color { get; }
 
+        /// <summary> Returns true if ... is valid. </summary>
+        /// <value> <c> true </c> if this instance is valid; otherwise, <c> false </c>. </value>
+        public bool IsValid => Rank != 0 && !string.IsNullOrEmpty(Total) && !string.IsNullOrEmpty(Color) && !string.IsNullOrEmpty(Word) && !string.IsNullOrEmpty(Love) && !string.IsNullOrEmpty(Job) && !string.IsNullOrEmpty(Url);
+
         /// <summary> Gets the job. </summary>
         /// <value> The job. </value>
         public string Job { get; }

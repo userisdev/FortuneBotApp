@@ -4,6 +4,7 @@ using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -21,29 +22,102 @@ namespace FortuneBotApp
         /// <summary> The last updated </summary>
         private DateTime lastUpdated = DateTime.MinValue;
 
+        /// <summary> Gets a value indicating whether this <see cref="BloodGenerator" /> is updating. </summary>
+        /// <value> <c> true </c> if updating; otherwise, <c> false </c>. </value>
+        public bool Updating { get; private set; } = false;
+
         /// <summary> Gets the item. </summary>
         /// <param name="type"> The type. </param>
         /// <returns> </returns>
-        public async Task<BloodItem> GetItem(BloodType type)
+        public BloodItem GetItem(BloodType type)
         {
-            if (DateTime.Today > lastUpdated || map.Values.Any(e => e.Rank == 0))
-            {
-                await UpdateAsync();
-            }
-
             return map.TryGetValue(type, out BloodItem tmp) ? tmp : BloodItem.Empty;
         }
 
         /// <summary> Gets the ranking. </summary>
         /// <returns> </returns>
-        public async Task<IEnumerable<BloodType>> GetRankingAsync()
+        public IEnumerable<BloodType> GetRanking()
         {
-            if (DateTime.Today > lastUpdated|| map.Values.Any(e => e.Rank == 0))
+            return map.Values.OrderBy(e => e.Rank).Select(e => e.Type).ToArray();
+        }
+
+        /// <summary>
+        /// Returns true if ... is valid.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsValid => !map.Values.Any(e => e.Rank == 0);
+
+        /// <summary> Updates this instance. </summary>
+        public async Task UpdateAsync()
+        {
+            if (lastUpdated >= DateTime.Today && !map.Values.Any(e => e.Rank == 0))
             {
-                await UpdateAsync();
+                return;
             }
 
-            return map.Values.OrderBy(e => e.Rank).Select(e => e.Type).ToArray();
+            try
+            {
+                Updating = true;
+                DateTime now = DateTime.Today;
+                lastUpdated = now;
+
+                byte[] data = await DownloadHtmlAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
+                string htmlText = Encoding.UTF8.GetString(data);
+
+                if (lastUpdated < DateTime.Today)
+                {
+                    map.Clear();
+                }
+
+                Dictionary<string, string> links = ExtractBloodTypeLinks(htmlText);
+                foreach (KeyValuePair<string, string> item in links)
+                {
+                    switch (item.Key)
+                    {
+                        case "A型":
+                            if (!map.ContainsKey(BloodType.A) || !map[BloodType.A].IsValid)
+                            {
+                                map[BloodType.A] = await GetBloodItemAsync(BloodType.A, item.Value);
+                            }
+                            break;
+
+                        case "B型":
+                            if (!map.ContainsKey(BloodType.B) || !map[BloodType.B].IsValid)
+                            {
+                                map[BloodType.B] = await GetBloodItemAsync(BloodType.B, item.Value);
+                            }
+                            break;
+
+                        case "AB型":
+                            if (!map.ContainsKey(BloodType.AB) || !map[BloodType.AB].IsValid)
+                            {
+                                map[BloodType.AB] = await GetBloodItemAsync(BloodType.AB, item.Value);
+                            }
+                            break;
+
+                        case "O型":
+                            if (!map.ContainsKey(BloodType.O) || !map[BloodType.O].IsValid)
+                            {
+                                map[BloodType.O] = await GetBloodItemAsync(BloodType.O, item.Value);
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                lastUpdated = DateTime.MinValue;
+                Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Exception/{ex}");
+            }
+            finally
+            {
+                Updating = false;
+            }
         }
 
         /// <summary> Downloads the HTML asynchronous. </summary>
@@ -90,7 +164,7 @@ namespace FortuneBotApp
         {
             IElement div = document.QuerySelector(".blue");
             IElement p = div?.QuerySelector("p");
-            string content = p?.TextContent ?? "---";
+            string content = p?.TextContent ?? string.Empty;
 
             return new BloodJobRecord(content);
         }
@@ -102,7 +176,7 @@ namespace FortuneBotApp
         {
             IElement div = document.QuerySelector(".pink");
             IElement p = div?.QuerySelector("p");
-            string content = p?.TextContent ?? "---";
+            string content = p?.TextContent ?? string.Empty;
 
             return new BloodLoveRecord(content);
         }
@@ -134,16 +208,16 @@ namespace FortuneBotApp
         {
             IElement div = document.QuerySelector(".pink");
             IElement p = div?.QuerySelector("p");
-            string content = p?.TextContent ?? "---";
+            string content = p?.TextContent ?? string.Empty;
 
-            AngleSharp.Dom.IElement[] list = document.QuerySelectorAll("ul > li").ToArray();
+            IElement[] list = document.QuerySelectorAll("ul > li").ToArray();
             if (list.Length < 2)
             {
-                return new BloodTotalRecord(content, "---", "---");
+                return new BloodTotalRecord(content, string.Empty, string.Empty);
             }
 
-            string color = list[0]?.QuerySelector("p")?.TextContent ?? "---";
-            string word = list[1]?.QuerySelector("p")?.TextContent ?? "---";
+            string color = list[0]?.QuerySelector("p")?.TextContent ?? string.Empty;
+            string word = list[1]?.QuerySelector("p")?.TextContent ?? string.Empty;
 
             return new BloodTotalRecord(content, color, word);
         }
@@ -158,6 +232,8 @@ namespace FortuneBotApp
             byte[] data = await DownloadHtmlAsync(url);
             string htmlText = Encoding.UTF8.GetString(data);
 
+            File.WriteAllBytes($"{type}.bin", data);
+
             HtmlParser parser = new HtmlParser();
             IHtmlDocument document = parser.ParseDocument(htmlText);
 
@@ -167,52 +243,6 @@ namespace FortuneBotApp
             BloodJobRecord job = ExtractJob(document);
 
             return new BloodItem(type, rank, total.Content, total.Color, total.Word, love.Content, job.Content, url);
-        }
-
-        /// <summary> Updates this instance. </summary>
-        private async Task UpdateAsync()
-        {
-            try
-            {
-                DateTime now = DateTime.Today;
-                lastUpdated = now;
-
-                byte[] data = await DownloadHtmlAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
-                string htmlText = Encoding.UTF8.GetString(data);
-
-                map.Clear();
-
-                Dictionary<string, string> links = ExtractBloodTypeLinks(htmlText);
-                foreach (KeyValuePair<string, string> item in links)
-                {
-                    switch (item.Key)
-                    {
-                        case "A型":
-                            map.Add(BloodType.A, await GetBloodItemAsync(BloodType.A, item.Value));
-                            break;
-
-                        case "B型":
-                            map.Add(BloodType.B, await GetBloodItemAsync(BloodType.B, item.Value));
-                            break;
-
-                        case "AB型":
-                            map.Add(BloodType.AB, await GetBloodItemAsync(BloodType.AB, item.Value));
-                            break;
-
-                        case "O型":
-                            map.Add(BloodType.O, await GetBloodItemAsync(BloodType.O, item.Value));
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                lastUpdated = DateTime.MinValue;
-                Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Exception/{ex}");
-            }
         }
     }
 }

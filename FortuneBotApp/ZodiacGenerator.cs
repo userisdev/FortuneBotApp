@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace FortuneBotApp
 {
@@ -16,16 +17,15 @@ namespace FortuneBotApp
         /// <summary> The last updated </summary>
         private DateTime lastUpdated = DateTime.MinValue;
 
+        /// <summary> Gets a value indicating whether this <see cref="ZodiacGenerator" /> is updating. </summary>
+        /// <value> <c> true </c> if updating; otherwise, <c> false </c>. </value>
+        public bool Updating { get; private set; } = false;
+
         /// <summary> Gets the item. </summary>
         /// <param name="type"> The type. </param>
         /// <returns> </returns>
         public ZodiacItem GetItem(ZodiacType type)
         {
-            if (DateTime.Today > lastUpdated)
-            {
-                Update();
-            }
-
             return map.TryGetValue(type, out ZodiacItem tmp) ? tmp : ZodiacItem.Empty;
         }
 
@@ -33,42 +33,26 @@ namespace FortuneBotApp
         /// <returns> </returns>
         public IEnumerable<ZodiacType> GetRanking()
         {
-            if (DateTime.Today > lastUpdated)
-            {
-                Update();
-            }
-
             return map.Values.OrderBy(e => e.Rank).Select(e => e.Type).ToArray();
         }
 
-        /// <summary> Gets the request. </summary>
-        /// <param name="url"> The URL. </param>
-        /// <returns> </returns>
-        /// <exception cref="System.Net.Http.HttpRequestException"> Failed to fetch {endpoint} </exception>
-        private static string GetRequest(string url)
-        {
-            Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
-            using (HttpClient client = new HttpClient())
-            {
-                HttpResponseMessage response = client.GetAsync(url).Result;
-
-                return response.IsSuccessStatusCode
-                    ? response.Content.ReadAsStringAsync().Result
-                    : throw new HttpRequestException($"Failed to fetch {url}");
-            }
-        }
-
         /// <summary> Updates this instance. </summary>
-        private void Update()
+        public async Task UpdateAsync()
         {
+            if (lastUpdated >= DateTime.Today)
+            {
+                return;
+            }
+
             try
             {
+                Updating = true;
                 DateTime now = DateTime.Today;
                 lastUpdated = now;
 
                 string todayText = $"{now:yyyy}/{now:MM}/{now:dd}";
                 string endpoint = $"http://api.jugemkey.jp/api/horoscope/free/{todayText}";
-                string jsonText = GetRequest(endpoint);
+                string jsonText = await GetRequestAsync(endpoint);
 
                 JObject json = JObject.Parse(jsonText);
                 JArray records = json["horoscope"][todayText] as JArray;
@@ -94,6 +78,27 @@ namespace FortuneBotApp
             {
                 lastUpdated = DateTime.MinValue;
                 Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Exception/{ex}");
+            }
+            finally
+            {
+                Updating = false;
+            }
+        }
+
+        /// <summary> Gets the request. </summary>
+        /// <param name="url"> The URL. </param>
+        /// <returns> </returns>
+        /// <exception cref="System.Net.Http.HttpRequestException"> Failed to fetch {endpoint} </exception>
+        private static async Task<string> GetRequestAsync(string url)
+        {
+            Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
+            using (HttpClient client = new HttpClient())
+            {
+                HttpResponseMessage response = await client.GetAsync(url);
+
+                return response.IsSuccessStatusCode
+                    ? await response.Content.ReadAsStringAsync()
+                    : throw new HttpRequestException($"Failed to fetch {url}");
             }
         }
     }

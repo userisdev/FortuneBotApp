@@ -46,6 +46,13 @@ namespace FortuneBotApp
             await Task.Delay(Timeout.Infinite);
         }
 
+        /// <summary> Updates the asynchronous. </summary>
+        public async Task UpdateAsync()
+        {
+            await zodiacGen.UpdateAsync();
+            await bloodGen.UpdateAsync();
+        }
+
         /// <summary> Generates the log text. </summary>
         /// <param name="log"> The log. </param>
         /// <returns> </returns>
@@ -136,6 +143,13 @@ namespace FortuneBotApp
         /// <param name="command"> The command. </param>
         private async Task FortuneBloodSlashCommandHandler(SocketSlashCommand command)
         {
+            if (bloodGen.Updating)
+            {
+                Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Blood Updating");
+                await command.RespondAsync("blood now updating.");
+                return;
+            }
+
             BloodType type = BloodUtility.GetType((command.Data.Options.FirstOrDefault()?.Value as string) ?? string.Empty);
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Blood/{type}");
 
@@ -143,7 +157,14 @@ namespace FortuneBotApp
             {
                 if (type == BloodType.Invalid)
                 {
-                    IEnumerable<BloodType> ranking = await bloodGen.GetRankingAsync();
+                    if (!bloodGen.IsValid)
+                    {
+                        Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Blood Error");
+                        await command.RespondAsync("blood error.");
+                        return;
+                    }
+
+                    IEnumerable<BloodType> ranking = bloodGen.GetRanking();
                     EmbedBuilder builder = new EmbedBuilder().WithTitle("血液型占い ランキング");
 
                     foreach ((int rank, BloodType e) in ranking.Select((e, i) => (i + 1, e)))
@@ -158,7 +179,7 @@ namespace FortuneBotApp
                 }
                 else
                 {
-                    BloodItem item = await bloodGen.GetItem(type);
+                    BloodItem item = bloodGen.GetItem(type);
                     EmbedBuilder builder = new EmbedBuilder().WithTitle($"{item.Type}型");
                     _ = builder.AddField($"総合運", $"{item.Total}");
                     _ = builder.AddField($"ラッキーカラー", $"{item.Color}");
@@ -190,6 +211,13 @@ namespace FortuneBotApp
         /// <param name="command"> The command. </param>
         private async Task FortuneZodiacSlashCommandHandler(SocketSlashCommand command)
         {
+            if (zodiacGen.Updating)
+            {
+                Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Zodiac Updating");
+                await command.RespondAsync("now updating.");
+                return;
+            }
+
             (string zodiac, string birthday) = GetZodiacOption(command.Data.Options);
             (int month, int day) = GetDate(birthday);
 
