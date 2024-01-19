@@ -200,7 +200,9 @@ namespace FortuneBotApp
 
                 foreach ((int rank, ZodiacType e) in ranking.Select((e, i) => (i + 1, e)))
                 {
-                    _ = builder.AddField($"{rank}位", ZodiacUtility.GetJapaneseName(e));
+                    string emoji = ZodiacUtility.GetEmoji(e);
+                    string name = ZodiacUtility.GetJapaneseName(e);
+                    _ = builder.AddField($"{rank}位", $"{emoji}{name}");
                 }
 
                 _ = builder.AddField("\u200B", "powerd by [JugemKey](http://jugemkey.jp/api/) /【PR】[原宿占い館 塔里木](http://www.tarim.co.jp/)");
@@ -211,7 +213,9 @@ namespace FortuneBotApp
             else
             {
                 ZodiacItem item = zodiacGen.GetItem(sign);
-                EmbedBuilder builder = new EmbedBuilder().WithTitle(ZodiacUtility.GetJapaneseName(item.Type));
+                string emoji = ZodiacUtility.GetEmoji(item.Type);
+                string name = ZodiacUtility.GetJapaneseName(item.Type);
+                EmbedBuilder builder = new EmbedBuilder().WithTitle($"{emoji}{name}");
                 _ = builder.AddField($"総合運", $"{item.Total}");
                 _ = builder.AddField($"金運", $"{item.Money}", inline: true);
                 _ = builder.AddField($"仕事運", $"{item.Job}", inline: true);

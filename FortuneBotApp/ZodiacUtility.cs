@@ -7,11 +7,16 @@ namespace FortuneBotApp
     /// <summary> ZodiacUtility class. </summary>
     internal static class ZodiacUtility
     {
+        /// <summary> The emoji map </summary>
+        private static readonly IReadOnlyDictionary<ZodiacType, string> emojiMap;
+
+        /// <summary> The JPN name map </summary>
         private static readonly IReadOnlyDictionary<ZodiacType, string> jpnNameMap;
 
         /// <summary> The zodiac table </summary>
         private static readonly IEnumerable<ZodiacRecord> zodiacTable;
 
+        /// <summary> The zodiac type map </summary>
         private static readonly IReadOnlyDictionary<string, ZodiacType> zodiacTypeMap;
 
         /// <summary> Initializes the <see cref="ZodiacUtility" /> class. </summary>
@@ -76,6 +81,30 @@ namespace FortuneBotApp
                 {ZodiacType.Aquarius, "みずがめ座" },
                 {ZodiacType.Pisces, "うお座" },
             };
+
+            emojiMap = new Dictionary<ZodiacType, string>
+            {
+                {ZodiacType.Aries, "♈" },
+                {ZodiacType.Taurus, "♉" },
+                {ZodiacType.Gemini, "♊" },
+                {ZodiacType.Cancer, "♋" },
+                {ZodiacType.Leo, "♌" },
+                {ZodiacType.Virgo, "♍" },
+                {ZodiacType.Libra, "♎" },
+                {ZodiacType.Scorpius, "♏" },
+                {ZodiacType.Sagittarius, "♐" },
+                {ZodiacType.Capricornus, "♑" },
+                {ZodiacType.Aquarius, "♒" },
+                {ZodiacType.Pisces, "♓" },
+            };
+        }
+
+        /// <summary> Gets the emoji. </summary>
+        /// <param name="type"> The type. </param>
+        /// <returns> </returns>
+        public static string GetEmoji(ZodiacType type)
+        {
+            return emojiMap.TryGetValue(type, out string tmp) ? tmp : string.Empty;
         }
 
         /// <summary> Gets the name of the japanese. </summary>

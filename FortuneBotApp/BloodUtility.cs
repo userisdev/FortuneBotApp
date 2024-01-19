@@ -5,6 +5,30 @@ namespace FortuneBotApp
     /// <summary> BloodUtility class. </summary>
     internal static class BloodUtility
     {
+        /// <summary> Gets the emoji. </summary>
+        /// <param name="type"> The type. </param>
+        /// <returns> </returns>
+        public static string GetEmoji(BloodType type)
+        {
+            switch (type)
+            {
+                case BloodType.A:
+                    return "🅰";
+
+                case BloodType.B:
+                    return "🅱";
+
+                case BloodType.AB:
+                    return "🆎";
+
+                case BloodType.O:
+                    return "🅾";
+
+                default:
+                    return string.Empty;
+            }
+        }
+
         /// <summary> Gets the type. </summary>
         /// <param name="name"> The name. </param>
         /// <returns> </returns>
