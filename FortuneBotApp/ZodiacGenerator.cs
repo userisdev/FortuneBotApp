@@ -42,18 +42,19 @@ namespace FortuneBotApp
         }
 
         /// <summary> Gets the request. </summary>
-        /// <param name="endpoint"> The endpoint. </param>
+        /// <param name="url"> The URL. </param>
         /// <returns> </returns>
         /// <exception cref="System.Net.Http.HttpRequestException"> Failed to fetch {endpoint} </exception>
-        private static string GetRequest(string endpoint)
+        private static string GetRequest(string url)
         {
+            Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
             using (HttpClient client = new HttpClient())
             {
-                HttpResponseMessage response = client.GetAsync(endpoint).Result;
+                HttpResponseMessage response = client.GetAsync(url).Result;
 
                 return response.IsSuccessStatusCode
                     ? response.Content.ReadAsStringAsync().Result
-                    : throw new HttpRequestException($"Failed to fetch {endpoint}");
+                    : throw new HttpRequestException($"Failed to fetch {url}");
             }
         }
 

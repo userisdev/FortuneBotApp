@@ -4,7 +4,7 @@
     internal sealed class BloodItem
     {
         /// <summary> The empty </summary>
-        public static BloodItem Empty = new BloodItem(BloodType.Invalid, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
+        public static BloodItem Empty = new BloodItem(BloodType.Invalid, 0, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty);
 
         /// <summary> Initializes a new instance of the <see cref="BloodItem" /> class. </summary>
         /// <param name="type"> The type. </param>
@@ -14,7 +14,8 @@
         /// <param name="word"> The word. </param>
         /// <param name="love"> The love. </param>
         /// <param name="job"> The job. </param>
-        public BloodItem(BloodType type, int rank, string total, string color, string word, string love, string job)
+        /// <param name="url"> The URL. </param>
+        public BloodItem(BloodType type, int rank, string total, string color, string word, string love, string job, string url)
         {
             Type = type;
             Rank = rank;
@@ -23,6 +24,7 @@
             Word = word;
             Love = love;
             Job = job;
+            Url = url;
         }
 
         /// <summary> Gets the color. </summary>
@@ -48,6 +50,10 @@
         /// <summary> Gets the type. </summary>
         /// <value> The type. </value>
         public BloodType Type { get; }
+
+        /// <summary> Gets the URL. </summary>
+        /// <value> The URL. </value>
+        public string Url { get; }
 
         /// <summary> Gets the word. </summary>
         /// <value> The word. </value>

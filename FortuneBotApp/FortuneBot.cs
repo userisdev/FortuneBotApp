@@ -139,34 +139,41 @@ namespace FortuneBotApp
             BloodType type = BloodUtility.GetType((command.Data.Options.FirstOrDefault()?.Value as string) ?? string.Empty);
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Blood/{type}");
 
-            if (type == BloodType.Invalid)
+            try
             {
-                IEnumerable<BloodType> ranking = bloodGen.GetRanking();
-                EmbedBuilder builder = new EmbedBuilder().WithTitle("血液型占い ランキング");
-
-                foreach ((int rank, BloodType e) in ranking.Select((e, i) => (i + 1, e)))
+                if (type == BloodType.Invalid)
                 {
-                    _ = builder.AddField($"{rank}位", $"{e}型");
+                    IEnumerable<BloodType> ranking = await bloodGen.GetRankingAsync();
+                    EmbedBuilder builder = new EmbedBuilder().WithTitle("血液型占い ランキング");
+
+                    foreach ((int rank, BloodType e) in ranking.Select((e, i) => (i + 1, e)))
+                    {
+                        _ = builder.AddField($"{rank}位", $"{e}型");
+                    }
+
+                    _ = builder.AddField("\u200B", "[占いスクエア 今日の血液型占い](https://uranai.d-square.co.jp/bloodtype_today.html)");
+                    Embed embed = builder.Build();
+
+                    await command.RespondAsync(embed: embed);
                 }
+                else
+                {
+                    BloodItem item = await bloodGen.GetItem(type);
+                    EmbedBuilder builder = new EmbedBuilder().WithTitle($"{item.Type}型");
+                    _ = builder.AddField($"総合運", $"{item.Total}");
+                    _ = builder.AddField($"ラッキーカラー", $"{item.Color}");
+                    _ = builder.AddField($"ラッキーワード", $"{item.Word}");
+                    _ = builder.AddField($"恋愛運", $"{item.Love}");
+                    _ = builder.AddField($"仕事運", $"{item.Job}");
+                    _ = builder.AddField("\u200B", $"[占いスクエア 今日の血液型占い]({item.Url})");
+                    Embed embed = builder.Build();
 
-                _ = builder.AddField("\u200B", "[占いスクエア 今日の血液型占い](https://uranai.d-square.co.jp/bloodtype_today.html)");
-                Embed embed = builder.Build();
-
-                await command.RespondAsync(embed: embed);
+                    await command.RespondAsync(embed: embed);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                BloodItem item = bloodGen.GetItem(type);
-                EmbedBuilder builder = new EmbedBuilder().WithTitle($"{item.Type}型");
-                _ = builder.AddField($"総合運", $"{item.Total}");
-                _ = builder.AddField($"ラッキーカラー", $"{item.Color}");
-                _ = builder.AddField($"ラッキーワード", $"{item.Word}");
-                _ = builder.AddField($"恋愛運", $"{item.Love}");
-                _ = builder.AddField($"仕事運", $"{item.Job}");
-                _ = builder.AddField("\u200B", "[占いスクエア 今日の血液型占い](https://uranai.d-square.co.jp/bloodtype_today.html)");
-                Embed embed = builder.Build();
-
-                await command.RespondAsync(embed: embed);
+                Trace.WriteLine(ex);
             }
         }
 
