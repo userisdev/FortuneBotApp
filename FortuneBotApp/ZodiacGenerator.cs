@@ -92,14 +92,13 @@ namespace FortuneBotApp
         private static async Task<string> GetRequestAsync(string url)
         {
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
-            using (HttpClient client = new HttpClient())
-            {
-                HttpResponseMessage response = await client.GetAsync(url);
 
-                return response.IsSuccessStatusCode
-                    ? await response.Content.ReadAsStringAsync()
-                    : throw new HttpRequestException($"Failed to fetch {url}");
-            }
+            HttpClient httpClient = HttpClientFactory.Create();
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadAsStringAsync()
+                : throw new HttpRequestException($"Failed to fetch {url}");
         }
     }
 }

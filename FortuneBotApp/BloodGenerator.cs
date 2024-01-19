@@ -4,10 +4,8 @@ using AngleSharp.Html.Parser;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -21,6 +19,10 @@ namespace FortuneBotApp
 
         /// <summary> The last updated </summary>
         private DateTime lastUpdated = DateTime.MinValue;
+
+        /// <summary> Returns true if ... is valid. </summary>
+        /// <value> <c> true </c> if this instance is valid; otherwise, <c> false </c>. </value>
+        public bool IsValid => !map.Values.Any(e => e.Rank == 0);
 
         /// <summary> Gets a value indicating whether this <see cref="BloodGenerator" /> is updating. </summary>
         /// <value> <c> true </c> if updating; otherwise, <c> false </c>. </value>
@@ -41,14 +43,6 @@ namespace FortuneBotApp
             return map.Values.OrderBy(e => e.Rank).Select(e => e.Type).ToArray();
         }
 
-        /// <summary>
-        /// Returns true if ... is valid.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is valid; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsValid => !map.Values.Any(e => e.Rank == 0);
-
         /// <summary> Updates this instance. </summary>
         public async Task UpdateAsync()
         {
@@ -63,8 +57,7 @@ namespace FortuneBotApp
                 DateTime now = DateTime.Today;
                 lastUpdated = now;
 
-                byte[] data = await DownloadHtmlAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
-                string htmlText = Encoding.UTF8.GetString(data);
+                string htmlText = await GetRequestAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
 
                 if (lastUpdated < DateTime.Today)
                 {
@@ -117,26 +110,6 @@ namespace FortuneBotApp
             finally
             {
                 Updating = false;
-            }
-        }
-
-        /// <summary> Downloads the HTML asynchronous. </summary>
-        /// <param name="url"> The URL. </param>
-        /// <returns> </returns>
-        /// <exception cref="System.Net.Http.HttpRequestException"> HTTP request failed with status code {response.StatusCode} </exception>
-        private static async Task<byte[]> DownloadHtmlAsync(string url)
-        {
-            Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
-            using (HttpClient httpClient = new HttpClient())
-            {
-                HttpResponseMessage response = await httpClient.GetAsync(url);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadAsByteArrayAsync();
-                }
-
-                // エラーの場合は例外などの適切な処理を行う
-                throw new HttpRequestException($"HTTP request failed with status code {response.StatusCode}");
             }
         }
 
@@ -229,10 +202,7 @@ namespace FortuneBotApp
         private static async Task<BloodItem> GetBloodItemAsync(BloodType type, string path)
         {
             string url = $"https://uranai.d-square.co.jp/{path}";
-            byte[] data = await DownloadHtmlAsync(url);
-            string htmlText = Encoding.UTF8.GetString(data);
-
-            File.WriteAllBytes($"{type}.bin", data);
+            string htmlText = await GetRequestAsync(url);
 
             HtmlParser parser = new HtmlParser();
             IHtmlDocument document = parser.ParseDocument(htmlText);
@@ -243,6 +213,22 @@ namespace FortuneBotApp
             BloodJobRecord job = ExtractJob(document);
 
             return new BloodItem(type, rank, total.Content, total.Color, total.Word, love.Content, job.Content, url);
+        }
+
+        /// <summary> Gets the request. </summary>
+        /// <param name="url"> The URL. </param>
+        /// <returns> </returns>
+        /// <exception cref="System.Net.Http.HttpRequestException"> Failed to fetch {endpoint} </exception>
+        private static async Task<string> GetRequestAsync(string url)
+        {
+            Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
+
+            HttpClient httpClient = HttpClientFactory.Create();
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadAsStringAsync()
+                : throw new HttpRequestException($"Failed to fetch {url}");
         }
     }
 }
