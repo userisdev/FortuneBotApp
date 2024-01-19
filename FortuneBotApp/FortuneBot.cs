@@ -12,11 +12,17 @@ namespace FortuneBotApp
     /// <summary> FortuneBot class. </summary>
     internal sealed class FortuneBot
     {
+        /// <summary> The blood gen </summary>
+        private readonly BloodGenerator bloodGen = new BloodGenerator();
+
         /// <summary> The client </summary>
         private readonly DiscordSocketClient client;
 
         /// <summary> The token </summary>
         private readonly string token;
+
+        /// <summary> The zodiac gen </summary>
+        private readonly ZodiacGenerator zodiacGen = new ZodiacGenerator();
 
         /// <summary> Initializes a new instance of the <see cref="FortuneBot" /> class. </summary>
         /// <param name="token"> The token. </param>
@@ -60,7 +66,7 @@ namespace FortuneBotApp
             yield return new SlashCommandBuilder()
                 .WithName("fortune_blood")
                 .WithDescription("血液型占いコマンド")
-                .AddOption("type", ApplicationCommandOptionType.String, "A, B, AB, O", isRequired: true)
+                .AddOption("type", ApplicationCommandOptionType.String, "A, B, AB, O")
                 .Build();
 
             yield return new SlashCommandBuilder()
@@ -130,9 +136,38 @@ namespace FortuneBotApp
         /// <param name="command"> The command. </param>
         private async Task FortuneBloodSlashCommandHandler(SocketSlashCommand command)
         {
-            string type = (command.Data.Options.FirstOrDefault()?.Value as string) ?? string.Empty;
+            BloodType type = BloodUtility.GetType((command.Data.Options.FirstOrDefault()?.Value as string) ?? string.Empty);
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Blood/{type}");
-            await command.RespondAsync(type);
+
+            if (type == BloodType.Invalid)
+            {
+                IEnumerable<BloodType> ranking = bloodGen.GetRanking();
+                EmbedBuilder builder = new EmbedBuilder().WithTitle("血液型占い ランキング");
+
+                foreach ((int rank, BloodType e) in ranking.Select((e, i) => (i + 1, e)))
+                {
+                    _ = builder.AddField($"{rank}位", $"{e}型");
+                }
+
+                _ = builder.AddField("\u200B", "[占いスクエア 今日の血液型占い](https://uranai.d-square.co.jp/bloodtype_today.html)");
+                Embed embed = builder.Build();
+
+                await command.RespondAsync(embed: embed);
+            }
+            else
+            {
+                BloodItem item = bloodGen.GetItem(type);
+                EmbedBuilder builder = new EmbedBuilder().WithTitle($"{item.Type}型");
+                _ = builder.AddField($"総合運", $"{item.Total}");
+                _ = builder.AddField($"ラッキーカラー", $"{item.Color}");
+                _ = builder.AddField($"ラッキーワード", $"{item.Word}");
+                _ = builder.AddField($"恋愛運", $"{item.Love}");
+                _ = builder.AddField($"仕事運", $"{item.Job}");
+                _ = builder.AddField("\u200B", "[占いスクエア 今日の血液型占い](https://uranai.d-square.co.jp/bloodtype_today.html)");
+                Embed embed = builder.Build();
+
+                await command.RespondAsync(embed: embed);
+            }
         }
 
         /// <summary> Fortunes the slash command handler. </summary>
@@ -155,11 +190,40 @@ namespace FortuneBotApp
             ZodiacType signFromBirthday = ZodiacUtility.GetType(month, day);
 
             ZodiacType sign = SelectSign(signFromZodiac, signFromBirthday);
-            string description = ZodiacUtility.GetDescription(sign);
 
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Fortune Zodiac/[{zodiac}]/[{birthday}]/{sign}");
 
-            await command.RespondAsync($"{sign}/{description}");
+            if (sign == ZodiacType.Invalid)
+            {
+                IEnumerable<ZodiacType> ranking = zodiacGen.GetRanking();
+                EmbedBuilder builder = new EmbedBuilder().WithTitle("星座占い ランキング");
+
+                foreach ((int rank, ZodiacType e) in ranking.Select((e, i) => (i + 1, e)))
+                {
+                    _ = builder.AddField($"{rank}位", ZodiacUtility.GetJapaneseName(e));
+                }
+
+                _ = builder.AddField("\u200B", "powerd by [JugemKey](http://jugemkey.jp/api/) /【PR】[原宿占い館 塔里木](http://www.tarim.co.jp/)");
+                Embed embed = builder.Build();
+
+                await command.RespondAsync(embed: embed);
+            }
+            else
+            {
+                ZodiacItem item = zodiacGen.GetItem(sign);
+                EmbedBuilder builder = new EmbedBuilder().WithTitle(ZodiacUtility.GetJapaneseName(item.Type));
+                _ = builder.AddField($"総合運", $"{item.Total}");
+                _ = builder.AddField($"金運", $"{item.Money}", inline: true);
+                _ = builder.AddField($"仕事運", $"{item.Job}", inline: true);
+                _ = builder.AddField($"恋愛運", $"{item.Love}", inline: true);
+                _ = builder.AddField($"ラッキーアイテム", $"{item.Item}");
+                _ = builder.AddField($"ラッキーカラー", $"{item.Color}");
+                _ = builder.AddField("\u200B", $"{item.Content}");
+                _ = builder.AddField("\u200B", "powerd by [JugemKey](http://jugemkey.jp/api/) /【PR】[原宿占い館 塔里木](http://www.tarim.co.jp/)");
+                Embed embed = builder.Build();
+
+                await command.RespondAsync(embed: embed);
+            }
         }
 
         /// <summary> Called when [log]. </summary>

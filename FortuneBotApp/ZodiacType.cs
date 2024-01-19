@@ -1,6 +1,6 @@
 ﻿namespace FortuneBotApp
 {
-    /// <summary> ZodiacType class. </summary>
+    /// <summary> ZodiacType enum. </summary>
     internal enum ZodiacType
     {
         /// <summary> The aries </summary>
