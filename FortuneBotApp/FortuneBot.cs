@@ -278,7 +278,7 @@ namespace FortuneBotApp
         /// <summary> Clients the ready. </summary>
         private async Task OnReady()
         {
-            await client.SetGameAsync("サーバー", type: ActivityType.Watching);
+            await client.SetGameAsync("未来", type: ActivityType.Watching);
 
             try
             {
