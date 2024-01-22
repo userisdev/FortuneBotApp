@@ -1,4 +1,4 @@
-﻿namespace FortuneBotApp
+﻿namespace FortuneBotApp.Zodiac
 {
     /// <summary> ZodiacRecord class. </summary>
     internal sealed class ZodiacRecord

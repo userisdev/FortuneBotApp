@@ -12,7 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace FortuneBotApp
+namespace FortuneBotApp.Blood
 {
     /// <summary> BloodGenerator class. </summary>
     internal sealed class BloodGenerator

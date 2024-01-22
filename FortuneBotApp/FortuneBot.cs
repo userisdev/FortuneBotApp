@@ -1,5 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using FortuneBotApp.Blood;
+using FortuneBotApp.Zodiac;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -34,7 +36,7 @@ namespace FortuneBotApp
 
             client.Log += OnLog;
             client.Ready += OnReady;
-            client.SlashCommandExecuted += SlashCommandHandler;
+            client.SlashCommandExecuted += SlashCommandHandlerWithExceptionLogging;
         }
 
         /// <summary> Runs the asynchronous. </summary>
@@ -314,6 +316,20 @@ namespace FortuneBotApp
 
                 default:
                     return;
+            }
+        }
+
+        /// <summary> Slashes the command handler with exception logging. </summary>
+        /// <param name="command"> The command. </param>
+        private async Task SlashCommandHandlerWithExceptionLogging(SocketSlashCommand command)
+        {
+            try
+            {
+                await SlashCommandHandler(command);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Exception/{ex}");
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace FortuneBotApp
+﻿namespace FortuneBotApp.Zodiac
 {
     /// <summary> ZodiacType enum. </summary>
     internal enum ZodiacType

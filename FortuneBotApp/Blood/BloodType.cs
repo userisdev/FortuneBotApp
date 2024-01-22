@@ -1,4 +1,4 @@
-﻿namespace FortuneBotApp
+﻿namespace FortuneBotApp.Blood
 {
     /// <summary> BloodType enum. </summary>
     internal enum BloodType

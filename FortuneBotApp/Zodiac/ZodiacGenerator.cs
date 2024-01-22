@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace FortuneBotApp
+namespace FortuneBotApp.Zodiac
 {
     /// <summary> ZodiacGenerator class. </summary>
     internal sealed class ZodiacGenerator

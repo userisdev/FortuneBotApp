@@ -1,4 +1,4 @@
-﻿namespace FortuneBotApp
+﻿namespace FortuneBotApp.Blood
 {
     /// <summary> BloodJobRecord class. </summary>
     internal sealed class BloodJobRecord

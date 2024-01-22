@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FortuneBotApp
+namespace FortuneBotApp.Blood
 {
     /// <summary> BloodUtility class. </summary>
     internal static class BloodUtility

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FortuneBotApp
+namespace FortuneBotApp.Zodiac
 {
     /// <summary> ZodiacUtility class. </summary>
     internal static class ZodiacUtility
