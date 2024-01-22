@@ -60,8 +60,8 @@ namespace FortuneBotApp.Blood
                 DateTime now = DateTime.Today;
                 lastUpdated = now;
 
-                byte[] data = await GetRequestAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
-                string htmlText = ConvertHtml(data);
+                byte[] data = await GetRequestByteArrayAsync("https://uranai.d-square.co.jp/bloodtype_today.html");
+                string htmlText = ConvertToText(data);
 
                 if (lastUpdated < DateTime.Today)
                 {
@@ -117,10 +117,10 @@ namespace FortuneBotApp.Blood
             }
         }
 
-        /// <summary> Converts the HTML. </summary>
+        /// <summary> Converts to text. </summary>
         /// <param name="data"> The data. </param>
         /// <returns> </returns>
-        private static string ConvertHtml(byte[] data)
+        private static string ConvertToText(byte[] data)
         {
             try
             {
@@ -232,8 +232,8 @@ namespace FortuneBotApp.Blood
         private static async Task<BloodItem> GetBloodItemAsync(BloodType type, string path)
         {
             string url = $"https://uranai.d-square.co.jp/{path}";
-            byte[] data = await GetRequestAsync(url);
-            string htmlText = ConvertHtml(data);
+            byte[] data = await GetRequestByteArrayAsync(url);
+            string htmlText = ConvertToText(data);
 
             File.WriteAllBytes($"{type}.dmp", data);
 
@@ -248,11 +248,11 @@ namespace FortuneBotApp.Blood
             return new BloodItem(type, rank, total.Content, total.Color, total.Word, love.Content, job.Content, url);
         }
 
-        /// <summary> Gets the request. </summary>
+        /// <summary> Gets the request byte array asynchronous. </summary>
         /// <param name="url"> The URL. </param>
         /// <returns> </returns>
         /// <exception cref="System.Net.Http.HttpRequestException"> Failed to fetch {endpoint} </exception>
-        private static async Task<byte[]> GetRequestAsync(string url)
+        private static async Task<byte[]> GetRequestByteArrayAsync(string url)
         {
             Trace.WriteLine($"{DateTime.Now:yyyy/MM/dd HH:mm:ss.fff} : Url/{url}");
 
@@ -261,7 +261,7 @@ namespace FortuneBotApp.Blood
 
             return response.IsSuccessStatusCode
                 ? await response.Content.ReadAsByteArrayAsync()
-                : throw new HttpRequestException($"Failed to fetch {url}");
+                : throw new HttpRequestException($"Failed : {response.StatusCode}");
         }
     }
 }

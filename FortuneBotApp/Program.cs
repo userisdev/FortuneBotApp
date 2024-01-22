@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -29,6 +30,10 @@ namespace FortuneBotApp
             _ = Trace.Listeners.Add(new TextWriterTraceListener(logFilePath, "LogFile"));
             _ = Trace.Listeners.Add(new ConsoleTraceListener());
             Trace.AutoFlush = true;
+
+            HttpClient httpClient = HttpClientFactory.Create();
+            string userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0";
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
 
             FortuneBot bot = new FortuneBot(token);
 
